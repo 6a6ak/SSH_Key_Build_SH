@@ -1,84 +1,57 @@
 # 🔐 SSH Key Builder & Deployment Tool (Windows → Ubuntu)
 
-This project provides a simple automated solution to:
+This repository provides a small script to generate an SSH key pair and install the public
+key on an Ubuntu server for passwordless login.
 
-- Create SSH key pairs on a Windows machine using Git Bash
-- Set secure permissions for private keys using PowerShell
-- Copy the public key to a remote Ubuntu server
-- Enable passwordless login via SSH
+Features:
+- Generate a private/public key pair on Windows via Git Bash
+- Secure private key file permissions using `fix_permissions.ps1`
+- Append the public key to `~/.ssh/authorized_keys` on the remote server (idempotent)
+- Attempt a key-based SSH connection automatically
 
-## 🚀 Features
+Modes (concepts added):
+- `ai` — automated / non-interactive: suitable for scripted or CI runs; minimizes prompts and
+	emits diagnostic output for integration.
+- `iconic` — interactive: suitable for manual terminal use with friendly icons and confirmations
+	(e.g. ✓ / ✖).
 
-- Auto-creates `id_rsa` and `id_rsa.pub` under `C:\keys`
-- Uses a robust PowerShell script to apply correct file permissions
-- Sends public key to the target Ubuntu server via `authorized_keys`
-- Automatically attempts a secure SSH connection using the new key
-
-## 🛠 Requirements
-
-- Windows OS with Git Bash installed
+Requirements:
+- Windows with Git Bash
 - PowerShell (default on Windows 10/11)
-- Remote Ubuntu server with:
-  - SSH enabled
-  - Valid user credentials for first-time access
+- Remote Ubuntu server with SSH enabled and initial credentials for first-time setup
 
-## 📂 File Structure
-
+File structure:
 ```
 project-root/
 ├── sshkey_builder.sh       # Main script (run from Git Bash)
-└── fix_permissions.ps1     # PowerShell script for file permissions
+└── fix_permissions.ps1     # PowerShell script to set secure file permissions
 ```
 
-## 🧪 How It Works
+How it works (summary):
+1. Prompts for server address/hostname and SSH username.
+2. Ensures the local `~/.ssh` directory exists.
+3. Generates a key pair with `ssh-keygen` if needed.
+4. Optionally secure the private key with `fix_permissions.ps1`.
+5. Appends the public key to the server's `~/.ssh/authorized_keys` (avoids duplicates).
+6. Attempts a passwordless SSH login using the new key.
 
-### Step-by-step breakdown of `sshkey_builder.sh`:
-
-1. **Prompt for Server Info**:
-    - Read IP and username input
-
-2. **Ensure SSH Key Folder Exists**:
-    - Creates `C:\keys` if not present
-
-3. **Generate SSH Key Pair If Needed**:
-    - Uses `ssh-keygen` to create `id_rsa` and `id_rsa.pub`
-
-4. **Fix Key Permissions (via PowerShell)**:
-    - Calls `fix_permissions.ps1` with the path to the private key
-
-5. **Copy Public Key to Remote Ubuntu Server**:
-    - Appends public key to `~/.ssh/authorized_keys`
-
-6. **Connect via SSH Without Password**:
-    - Attempts passwordless login using the private key
-
-## ⚙️ `fix_permissions.ps1` Explained
-
-The PowerShell script performs:
-
-- Disables inherited permissions
-- Clears existing ACLs
-- Grants `Read` permission **only** to the current user
-
-## 🤖 Prompts After Tool Is Built
-
+Example usage:
 ```bash
-# Start the tool:
+# Run from Git Bash on Windows:
 bash sshkey_builder.sh
 
-# Manually test SSH connection:
-ssh -i /c/keys/id_rsa ubuntu@<your-ip>
+# Test manually:
+ssh -i ~/.ssh/<your-key-name> username@server-ip
 
-# Reapply permissions manually (if needed):
-powershell.exe -ExecutionPolicy Bypass -File fix_permissions.ps1 "C:\keys\id_rsa"
+# Reapply permissions if needed:
+powershell.exe -ExecutionPolicy Bypass -File fix_permissions.ps1 "C:\path\to\private_key"
 ```
 
-## 📌 Notes
+Security notes:
+- Protect your private keys and use appropriate paths/names.
+- This tool is better suited for secure/internal networks; exercise caution in public environments.
 
-- Ensure `~/.ssh/authorized_keys` on Ubuntu server has correct contents and permissions.
-- This setup configures passwordless login only for the specified user and key.
-- Best used in secure or internal environments.
+If you want, I can:
+- Add a CLI option to select `ai` or `iconic` mode and implement differing behaviors.
 
-## 📄 License
-
-MIT License – use, modify, improve freely.
+License: MIT

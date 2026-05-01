@@ -25,37 +25,43 @@ KEY_NAME="$SERVER_IP"
 PRIVATE_KEY="$KEY_DIR/$KEY_NAME"
 PUBLIC_KEY="$PRIVATE_KEY.pub"
 
-mkdir -p "$KEY_DIR"
-chmod 700 "$KEY_DIR"
+# get the IP
+read -p "Enter the Ubuntu server IP: " SERVER_IP
+SERVER_IP=$(echo "$SERVER_IP" | tr -d '\r' | xargs)
 
-# Generate key if not exists
+read -p "Enter the SSH username: " USERNAME
+USERNAME=$(echo "$USERNAME" | tr -d '\r' | xargs)
+
+#MKDIR
+if [ ! -d "$KEY_DIR" ]; then
+    mkdir -p "$KEY_DIR"
+    echo "Created folder: $KEY_DIR"
+fi
+
+#key maker
 if [ ! -f "$PRIVATE_KEY" ]; then
-    ssh-keygen -t ed25519 -f "$PRIVATE_KEY" -N ""
-    echo "SSH key generated: $PRIVATE_KEY"
+    ssh-keygen -t rsa -b 4096 -f "$PRIVATE_KEY" -N ""
+    echo "SSH key pair generated at $PRIVATE_KEY"
 else
-    echo "Key exists: $PRIVATE_KEY"
+    echo "Key already exists, skipping generation"
 fi
 
-chmod 600 "$PRIVATE_KEY"
+#permission for powershell
+echo "Fixing permissions via PowerShell..."
+WIN_PATH=$(echo "$PRIVATE_KEY" | sed 's|/|\\|g' | sed 's|^\\c|C:|')
+powershell.exe -ExecutionPolicy Bypass -File "fix_permissions.ps1" "$WIN_PATH"
 
-# Copy key (idempotent)
-echo "Copying public key..."
-PUB_CONTENT="$(cat "$PUBLIC_KEY")"
-
-ssh "$USERNAME@$SERVER_IP" "mkdir -p ~/.ssh && chmod 700 ~/.ssh"
-ssh "$USERNAME@$SERVER_IP" "grep -qxF '$PUB_CONTENT' ~/.ssh/authorized_keys 2>/dev/null || echo '$PUB_CONTENT' >> ~/.ssh/authorized_keys"
-ssh "$USERNAME@$SERVER_IP" "chmod 600 ~/.ssh/authorized_keys"
-
-# Test connection with key only
-echo
-echo "Testing key-based SSH..."
-if ssh -i "$PRIVATE_KEY" -o BatchMode=yes "$USERNAME@$SERVER_IP" "echo OK" 2>/dev/null; then
-    echo "✔ Key auth working"
+# copy public key to server
+if [ -f "$PUBLIC_KEY" ]; then
+    echo "Copying public key to server..."
+    cat "$PUBLIC_KEY" | ssh "$USERNAME@$SERVER_IP" \
+    "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
 else
-    echo "❌ Key auth failed (check username/password once)"
+    echo "ERROR: Public key not found at $PUBLIC_KEY"
+    exit 1
 fi
 
-# Connect
+# if ssh key login
 echo
-echo "Connecting..."
+echo "Now trying to connect using private key..."
 ssh -i "$PRIVATE_KEY" "$USERNAME@$SERVER_IP"

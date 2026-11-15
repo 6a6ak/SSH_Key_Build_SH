@@ -1,57 +1,42 @@
-# 🔐 SSH Key Builder & Deployment Tool (Windows → Ubuntu)
+# SSH Key Builder
 
-This repository provides a small script to generate an SSH key pair and install the public
-key on an Ubuntu server for passwordless login.
+Generate an RSA 4096-bit key and install its public key on an Ubuntu SSH server.
+Requires Git Bash and PowerShell on Windows, or Bash on Linux/macOS, plus OpenSSH
+client tools and initial SSH access to the server.
 
-Features:
-- Generate a private/public key pair on Windows via Git Bash
-- Secure private key file permissions using `fix_permissions.ps1`
-- Append the public key to `~/.ssh/authorized_keys` on the remote server (idempotent)
-- Attempt a key-based SSH connection automatically
+## Usage
 
-Modes (concepts added):
-- `ai` — automated / non-interactive: suitable for scripted or CI runs; minimizes prompts and
-	emits diagnostic output for integration.
-- `iconic` — interactive: suitable for manual terminal use with friendly icons and confirmations
-	(e.g. ✓ / ✖).
-
-Requirements:
-- Windows with Git Bash
-- PowerShell (default on Windows 10/11)
-- Remote Ubuntu server with SSH enabled and initial credentials for first-time setup
-
-File structure:
-```
-project-root/
-├── sshkey_builder.sh       # Main script (run from Git Bash)
-└── fix_permissions.ps1     # PowerShell script to set secure file permissions
-```
-
-How it works (summary):
-1. Prompts for server address/hostname and SSH username.
-2. Ensures the local `~/.ssh` directory exists.
-3. Generates a key pair with `ssh-keygen` if needed.
-4. Optionally secure the private key with `fix_permissions.ps1`.
-5. Appends the public key to the server's `~/.ssh/authorized_keys` (avoids duplicates).
-6. Attempts a passwordless SSH login using the new key.
-
-Example usage:
 ```bash
-# Run from Git Bash on Windows:
 bash sshkey_builder.sh
-
-# Test manually:
-ssh -i ~/.ssh/<your-key-name> username@server-ip
-
-# Reapply permissions if needed:
-powershell.exe -ExecutionPolicy Bypass -File fix_permissions.ps1 "C:\path\to\private_key"
+bash sshkey_builder.sh server.example.com ubuntu
 ```
 
-Security notes:
-- Protect your private keys and use appropriate paths/names.
-- This tool is better suited for secure/internal networks; exercise caution in public environments.
+Missing arguments are prompted for once. Keys are stored in ~/.ssh using the
+server address as the filename. IPv6 colons become underscores. Existing private
+keys are reused. Missing or stale public keys are regenerated.
 
-If you want, I can:
-- Add a CLI option to select `ai` or `iconic` mode and implement differing behaviors.
+New keys have an empty passphrase. Protect your private key. Existing encrypted
+keys prompt during public-key derivation and require an SSH agent for batch-mode
+verification.
 
-License: MIT
+The included fix_permissions.ps1 limits private-key access to the current Windows
+user. The helper is found relative to the script. Linux/macOS use file mode 600.
+
+The server's authorized_keys file preserves existing entries. Matching key type
+and data prevent duplicate installation, including entries with comments or
+options. Avoid simultaneous installations for the same server account.
+
+Initial installation may prompt for the server password and host-key confirmation.
+The script verifies key authentication using BatchMode=yes, then opens an
+interactive SSH session. Errors stop execution with a nonzero exit status.
+There are no separate automation or icon modes.
+
+## Local regression checks
+
+```bash
+bash tests/test_builder.sh
+```
+
+Checks generate real temporary keys, apply Windows permissions, and execute the
+server installation command in a temporary local home through an SSH test double.
+A real network connection requires separate server access.

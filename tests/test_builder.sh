@@ -27,13 +27,6 @@ bash "$ROOT/sshkey_builder.sh" example.com tester > first.log
 key="$HOME/.ssh/example.com"
 fingerprint=$(ssh-keygen -lf "$key")
 [[ -s "$key" && -s "$key.pub" ]]
-case "$(uname -s)" in
-    MINGW*|MSYS*|CYGWIN*)
-        powershell.exe -NoProfile -ExecutionPolicy Bypass \
-            -File "$(cygpath -w "$ROOT/tests/test_permissions.ps1")" \
-            "$(cygpath -w "$key")"
-        ;;
-esac
 grep -q '^existing-key-without-newline$' "$TEST_REMOTE/.ssh/authorized_keys"
 cp "$TEST_REMOTE/.ssh/authorized_keys" before
 rm "$key.pub"

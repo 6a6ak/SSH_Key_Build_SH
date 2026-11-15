@@ -21,7 +21,6 @@ if [[ ! "$SERVER_IP" =~ ^[a-zA-Z0-9][a-zA-Z0-9.:-]*$ ]] ||
     exit 1
 fi
 
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 KEY_DIR="$HOME/.ssh"
 PRIVATE_KEY="$KEY_DIR/${SERVER_IP//:/_}"
 PUBLIC_KEY="$PRIVATE_KEY.pub"
@@ -37,14 +36,7 @@ else
     echo "Using existing private key: $PRIVATE_KEY"
 fi
 
-case "$(uname -s)" in
-    MINGW*|MSYS*|CYGWIN*)
-        powershell.exe -NoProfile -ExecutionPolicy Bypass \
-            -File "$(cygpath -w "$SCRIPT_DIR/fix_permissions.ps1")" \
-            "$(cygpath -w "$PRIVATE_KEY")"
-        ;;
-    *) chmod 600 -- "$PRIVATE_KEY" ;;
-esac
+chmod 600 -- "$PRIVATE_KEY"
 
 # Derive the public key to recover missing or stale public files.
 PUBLIC_TEMP=$(mktemp "$KEY_DIR/.public-key.XXXXXX")

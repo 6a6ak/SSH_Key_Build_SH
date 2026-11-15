@@ -1,7 +1,7 @@
 # SSH Key Builder
 
 Generate an RSA 4096-bit key and install its public key on an Ubuntu SSH server.
-Requires Git Bash and PowerShell on Windows, or Bash on Linux/macOS, plus OpenSSH
+Requires Git Bash on Windows, or Bash on Linux/macOS, plus OpenSSH
 client tools and initial SSH access to the server.
 
 ## Usage
@@ -19,8 +19,7 @@ New keys have an empty passphrase. Protect your private key. Existing encrypted
 keys prompt during public-key derivation and require an SSH agent for batch-mode
 verification.
 
-The included fix_permissions.ps1 limits private-key access to the current Windows
-user. The helper is found relative to the script. Linux/macOS use file mode 600.
+The script applies file mode 600 to the private key using chmod.
 
 The server's authorized_keys file preserves existing entries. Matching key type
 and data prevent duplicate installation, including entries with comments or
@@ -37,6 +36,6 @@ There are no separate automation or icon modes.
 bash tests/test_builder.sh
 ```
 
-Checks generate real temporary keys, apply Windows permissions, and execute the
+Checks generate real temporary keys and execute the
 server installation command in a temporary local home through an SSH test double.
 A real network connection requires separate server access.

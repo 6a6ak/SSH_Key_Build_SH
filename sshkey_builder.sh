@@ -23,7 +23,7 @@ fi
 
 KEY_NAME=${3:-}
 if [[ -z "$KEY_NAME" ]]; then
-    read -rp "Enter a name for the key (letters, digits, hyphens, underscores): " KEY_NAME
+    read -rp "Enter a key name (e.g. office_backup for the office backup server): " KEY_NAME
 fi
 KEY_NAME=${KEY_NAME%$'\r'}
 if [[ ! "$KEY_NAME" =~ ^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$ ]] ||
@@ -47,8 +47,8 @@ if [[ ! -f "$PRIVATE_KEY" ]]; then
         read -rp "Protect the new private key with a passphrase? [y/N] " protect_key
     fi
     case "$protect_key" in
-        y|Y|yes|YES|Yes) ssh-keygen -t rsa -b 4096 -f "$PRIVATE_KEY" ;;
-        ""|n|N|no|NO|No) ssh-keygen -t rsa -b 4096 -f "$PRIVATE_KEY" -N "" ;;
+        y|Y|yes|YES|Yes) ssh-keygen -t rsa -b 4096 -C "$KEY_NAME" -f "$PRIVATE_KEY" ;;
+        ""|n|N|no|NO|No) ssh-keygen -t rsa -b 4096 -C "$KEY_NAME" -f "$PRIVATE_KEY" -N "" ;;
         *) echo "ERROR: Enter yes or no." >&2; exit 1 ;;
     esac
 else
@@ -60,7 +60,7 @@ chmod 600 -- "$PRIVATE_KEY"
 # Derive the public key to recover missing or stale public files.
 PUBLIC_TEMP=$(mktemp "$KEY_DIR/.public-key.XXXXXX")
 trap 'rm -f -- "$PUBLIC_TEMP"' EXIT
-ssh-keygen -y -f "$PRIVATE_KEY" > "$PUBLIC_TEMP"
+ssh-keygen -y -f "$PRIVATE_KEY" | awk -v name="$KEY_NAME" '{ print $1, $2, name }' > "$PUBLIC_TEMP"
 mv -f -- "$PUBLIC_TEMP" "$PUBLIC_KEY"
 
 echo "Installing public key on $SERVER_IP..."

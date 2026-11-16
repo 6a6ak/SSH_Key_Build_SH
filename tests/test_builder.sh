@@ -27,6 +27,7 @@ bash "$ROOT/sshkey_builder.sh" example.com tester office_key > first.log
 key="$HOME/.ssh/office_key"
 fingerprint=$(ssh-keygen -lf "$key")
 [[ -s "$key" && -s "$key.pub" ]]
+[[ $(awk '{ print $3 }' "$key.pub") == office_key ]]
 grep -q '^existing-key-without-newline$' "$TEST_REMOTE/.ssh/authorized_keys"
 cp "$TEST_REMOTE/.ssh/authorized_keys" before
 rm "$key.pub"

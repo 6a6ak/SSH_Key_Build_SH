@@ -59,7 +59,8 @@ bash sshkey_builder.sh server.example.com ubuntu office_key
 Keys are saved under `~/.ssh/`, using the server address as the filename.
 With the default Git Bash home directory on Windows, a server named
 Enter a key name when prompted, or pass it as the third argument. The name
-`office_key` produces these files:
+`office_key` identifies a key for the office server and produces these files.
+The same name appears as the comment at the end of the public key.
 
 | File | Default Windows location | Purpose |
 | --- | --- | --- |

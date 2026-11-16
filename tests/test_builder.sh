@@ -23,23 +23,23 @@ MOCK
 chmod +x "$TEMP_ROOT/bin/ssh"
 export PATH="$TEMP_ROOT/bin:$PATH"
 cd "$TEMP_ROOT"
-bash "$ROOT/sshkey_builder.sh" example.com tester > first.log
-key="$HOME/.ssh/example.com"
+bash "$ROOT/sshkey_builder.sh" example.com tester office_key > first.log
+key="$HOME/.ssh/office_key"
 fingerprint=$(ssh-keygen -lf "$key")
 [[ -s "$key" && -s "$key.pub" ]]
 grep -q '^existing-key-without-newline$' "$TEST_REMOTE/.ssh/authorized_keys"
 cp "$TEST_REMOTE/.ssh/authorized_keys" before
 rm "$key.pub"
-bash "$ROOT/sshkey_builder.sh" example.com tester > second.log
+bash "$ROOT/sshkey_builder.sh" example.com tester office_key > second.log
 [[ "$fingerprint" == "$(ssh-keygen -lf "$key")" ]]
 cmp before "$TEST_REMOTE/.ssh/authorized_keys"
 printf 'restrict %s old-comment\n' "$(cat "$key.pub")" > "$TEST_REMOTE/.ssh/authorized_keys"
 cp "$TEST_REMOTE/.ssh/authorized_keys" before
 printf 'stale public key\n' > "$key.pub"
-bash "$ROOT/sshkey_builder.sh" example.com tester > third.log
+bash "$ROOT/sshkey_builder.sh" example.com tester office_key > third.log
 cmp before "$TEST_REMOTE/.ssh/authorized_keys"
 : > "$TEST_LOG"
-if TEST_VERIFY_EXIT=7 bash "$ROOT/sshkey_builder.sh" example.com tester > failed.log; then
+if TEST_VERIFY_EXIT=7 bash "$ROOT/sshkey_builder.sh" example.com tester office_key > failed.log; then
     echo "Expected verification failure" >&2
     exit 1
 fi
@@ -49,5 +49,5 @@ fi
 if bash "$ROOT/sshkey_builder.sh" '-oProxyCommand=bad' tester 2>/dev/null; then exit 1; fi
 if bash "$ROOT/sshkey_builder.sh" example.com '../bad' 2>/dev/null; then exit 1; fi
 [[ ! -s "$TEST_LOG" ]]
-printf 'example.com\ntester\n' | bash "$ROOT/sshkey_builder.sh" > interactive.log
+printf 'example.com\ntester\noffice_key\n' | bash "$ROOT/sshkey_builder.sh" > interactive.log
 echo "All local regression checks passed."

@@ -26,7 +26,7 @@ Use Git Bash explicitly. This example assumes Git is installed in its default lo
 To supply the server address and username directly:
 
 ```powershell
-& "C:\Program Files\Git\bin\bash.exe" ./sshkey_builder.sh server.example.com ubuntu
+& "C:\Program Files\Git\bin\bash.exe" ./sshkey_builder.sh server.example.com ubuntu office_key
 ```
 
 ### From Git Bash
@@ -40,7 +40,7 @@ bash sshkey_builder.sh
 ```bash
 bash sshkey_builder.sh
 # Or supply the server address and username:
-bash sshkey_builder.sh server.example.com ubuntu
+bash sshkey_builder.sh server.example.com ubuntu office_key
 ```
 
 ## What to expect
@@ -58,12 +58,13 @@ bash sshkey_builder.sh server.example.com ubuntu
 
 Keys are saved under `~/.ssh/`, using the server address as the filename.
 With the default Git Bash home directory on Windows, a server named
-`server.example.com` produces these files:
+Enter a key name when prompted, or pass it as the third argument. The name
+`office_key` produces these files:
 
 | File | Default Windows location | Purpose |
 | --- | --- | --- |
-| Private key | `C:\Users\<WindowsUsername>\.ssh\server.example.com` | Used locally to authenticate. Keep it private. |
-| Public key | `C:\Users\<WindowsUsername>\.ssh\server.example.com.pub` | Installed on the server. |
+| Private key | `C:\Users\<WindowsUsername>\.ssh\office_key` | Used locally to authenticate. Keep it private. |
+| Public key | `C:\Users\<WindowsUsername>\.ssh\office_key.pub` | Installed on the server. |
 
 To open the default key folder from PowerShell:
 
@@ -80,7 +81,7 @@ IPv6 colons in key filenames become underscores.
 From Git Bash or a Linux/macOS terminal:
 
 ```bash
-ssh -i ~/.ssh/server.example.com -o IdentitiesOnly=yes ubuntu@server.example.com
+ssh -i ~/.ssh/office_key -o IdentitiesOnly=yes ubuntu@server.example.com
 ```
 
 Replace the example address and username with the values you used during setup.

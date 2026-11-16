@@ -34,17 +34,14 @@ grep -qx 'Host office_key' "$config"
 grep -q 'ssh office_key' first.log
 grep -q '^existing-key-without-newline$' "$TEST_REMOTE/.ssh/authorized_keys"
 cp "$TEST_REMOTE/.ssh/authorized_keys" before
-rm "$key.pub"
-bash "$ROOT/sshkey_builder.sh" example.com tester office_key > second.log
+cp "$key.pub" public.before
+if bash "$ROOT/sshkey_builder.sh" example.com tester office_key > second.log 2>&1; then exit 1; fi
+grep -q 'Choose a new key name' second.log
 [[ "$fingerprint" == "$(ssh-keygen -lf "$key")" ]]
-cmp before "$TEST_REMOTE/.ssh/authorized_keys"
-printf 'restrict %s old-comment\n' "$(cat "$key.pub")" > "$TEST_REMOTE/.ssh/authorized_keys"
-cp "$TEST_REMOTE/.ssh/authorized_keys" before
-printf 'stale public key\n' > "$key.pub"
-bash "$ROOT/sshkey_builder.sh" example.com tester office_key > third.log
+cmp public.before "$key.pub"
 cmp before "$TEST_REMOTE/.ssh/authorized_keys"
 : > "$TEST_LOG"
-if TEST_VERIFY_EXIT=7 bash "$ROOT/sshkey_builder.sh" example.com tester office_key > failed.log; then
+if TEST_VERIFY_EXIT=7 bash "$ROOT/sshkey_builder.sh" example.com tester failed_key > failed.log; then
     echo "Expected verification failure" >&2
     exit 1
 fi
@@ -54,7 +51,7 @@ fi
 if bash "$ROOT/sshkey_builder.sh" '-oProxyCommand=bad' tester 2>/dev/null; then exit 1; fi
 if bash "$ROOT/sshkey_builder.sh" example.com '../bad' 2>/dev/null; then exit 1; fi
 [[ ! -s "$TEST_LOG" ]]
-printf 'example.com\ntester\noffice_key\n' | bash "$ROOT/sshkey_builder.sh" > interactive.log
+printf 'example.com\ntester\ninteractive_key\n' | bash "$ROOT/sshkey_builder.sh" > interactive.log
 [[ $(grep -c '^Host office_key$' "$config") -eq 1 ]]
 printf '\nHost other_key\n    HostName other.example.com\n' >> "$config"
 cp "$config" config.before

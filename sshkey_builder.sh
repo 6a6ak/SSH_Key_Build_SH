@@ -7,6 +7,24 @@ if (( $# > 3 )); then
 fi
 SERVER_IP=${1:-}
 USERNAME=${2:-}
+if (( $# == 0 )) && [[ -t 0 && -t 1 ]]; then
+    cat <<'INTRO'
+------------------------------------------------------------
+SSH Key Builder
+------------------------------------------------------------
+Creates a new SSH key pair on this computer.
+Both key files stay here. Only the public key is added to the server.
+Tests login with the new key, then saves a short connection name
+in your local SSH config if the test succeeds.
+If either key file already exists, choose a different name.
+
+Repository
+https://github.com/6a6ak/SSH_Key_Build_SH
+
+INTRO
+    read -r -p "Press Enter to begin (Ctrl+C to cancel)." _
+    printf '\n'
+fi
 if [[ -z "$SERVER_IP" ]]; then
     read -rp "Enter the Ubuntu server IP or hostname: " SERVER_IP
 fi
@@ -62,31 +80,21 @@ ALIAS_REGISTERED=no
 check_config_alias
 umask 077
 mkdir -p -- "$KEY_DIR"
-if [[ ! -f "$PRIVATE_KEY" ]]; then
-    if [[ -e "$PUBLIC_KEY" ]]; then
-        echo "ERROR: Public key exists without its private key: $PUBLIC_KEY" >&2
-        exit 1
-    fi
-    protect_key=n
-    if [[ -t 0 ]]; then
-        read -rp "Protect the new private key with a passphrase? [y/N] " protect_key
-    fi
-    case "$protect_key" in
-        y|Y|yes|YES|Yes) ssh-keygen -t rsa -b 4096 -C "$KEY_NAME" -f "$PRIVATE_KEY" ;;
-        ""|n|N|no|NO|No) ssh-keygen -t rsa -b 4096 -C "$KEY_NAME" -f "$PRIVATE_KEY" -N "" ;;
-        *) echo "ERROR: Enter yes or no." >&2; exit 1 ;;
-    esac
-else
-    echo "Using existing private key: $PRIVATE_KEY"
+if [[ -e "$PRIVATE_KEY" || -L "$PRIVATE_KEY" || -e "$PUBLIC_KEY" || -L "$PUBLIC_KEY" ]]; then
+    echo "ERROR: A key file named $KEY_NAME already exists. Choose a new key name." >&2
+    exit 1
 fi
 
+protect_key=n
+if [[ -t 0 ]]; then
+    read -rp "Protect the new private key with a passphrase? [y/N] " protect_key
+fi
+case "$protect_key" in
+    y|Y|yes|YES|Yes) ssh-keygen -t rsa -b 4096 -C "$KEY_NAME" -f "$PRIVATE_KEY" ;;
+    ""|n|N|no|NO|No) ssh-keygen -t rsa -b 4096 -C "$KEY_NAME" -f "$PRIVATE_KEY" -N "" ;;
+    *) echo "ERROR: Enter yes or no." >&2; exit 1 ;;
+esac
 chmod 600 -- "$PRIVATE_KEY"
-
-# Derive the public key to recover missing or stale public files.
-PUBLIC_TEMP=$(mktemp "$KEY_DIR/.public-key.XXXXXX")
-trap 'rm -f -- "$PUBLIC_TEMP"' EXIT
-ssh-keygen -y -f "$PRIVATE_KEY" | awk -v name="$KEY_NAME" '{ print $1, $2, name }' > "$PUBLIC_TEMP"
-mv -f -- "$PUBLIC_TEMP" "$PUBLIC_KEY"
 
 echo "Installing public key on $SERVER_IP..."
 ssh -i "$PRIVATE_KEY" -o IdentitiesOnly=yes "$USERNAME@$SERVER_IP" '

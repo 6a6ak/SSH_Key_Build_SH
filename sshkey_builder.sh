@@ -109,7 +109,7 @@ ssh -i "$PRIVATE_KEY" -o IdentitiesOnly=yes "$USERNAME@$SERVER_IP" '
 ' < "$PUBLIC_KEY"
 
 echo "Verifying key-based login..."
-ssh -i "$PRIVATE_KEY" -o IdentitiesOnly=yes -o BatchMode=no \
+ssh -F none -i "$PRIVATE_KEY" -o IdentitiesOnly=yes -o IdentityAgent=none \
     -o PreferredAuthentications=publickey \
     "$USERNAME@$SERVER_IP" 'true'
 echo "Key-based login verified."

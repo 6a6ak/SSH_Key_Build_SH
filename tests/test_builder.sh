@@ -13,6 +13,7 @@ cat > "$TEMP_ROOT/bin/ssh" <<'MOCK'
 set -euo pipefail
 printf '%s\n' "$*" >> "$TEST_LOG"
 if [[ "$*" == *PreferredAuthentications=publickey* ]]; then
+    [[ "$*" == '-F none -i '* && "$*" == *' -o IdentityAgent=none '* ]]
     exit "${TEST_VERIFY_EXIT:-0}"
 fi
 last="${!#}"
@@ -48,7 +49,7 @@ if TEST_VERIFY_EXIT=7 bash "$ROOT/sshkey_builder.sh" example.com tester office_k
     exit 1
 fi
 # Each recorded invocation has multiline arguments. Count the identity option.
-[[ $(grep -c '^-i ' "$TEST_LOG") -eq 2 ]]
+[[ $(grep -Ec '^(-F none )?-i ' "$TEST_LOG") -eq 2 ]]
 : > "$TEST_LOG"
 if bash "$ROOT/sshkey_builder.sh" '-oProxyCommand=bad' tester 2>/dev/null; then exit 1; fi
 if bash "$ROOT/sshkey_builder.sh" example.com '../bad' 2>/dev/null; then exit 1; fi

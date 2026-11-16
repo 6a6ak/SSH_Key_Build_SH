@@ -35,6 +35,31 @@ fi
 KEY_DIR="$HOME/.ssh"
 PRIVATE_KEY="$KEY_DIR/$KEY_NAME"
 PUBLIC_KEY="$PRIVATE_KEY.pub"
+SSH_CONFIG="$KEY_DIR/config"
+HOST_ENTRY=$(printf 'Host %s\n    HostName %s\n    User %s\n    IdentityFile ~/.ssh/%s\n    IdentitiesOnly yes' \
+    "$KEY_NAME" "$SERVER_IP" "$USERNAME" "$KEY_NAME")
+
+check_config_alias() {
+    [[ -e "$SSH_CONFIG" ]] || return 0
+    local existing
+    existing=$(awk -v alias="$KEY_NAME" '
+        tolower($1) == "host" || tolower($1) == "match" {
+            if (matched) exit
+            if (tolower($1) != "host") next
+            for (i = 2; i <= NF; i++)
+                if (tolower($i) == tolower(alias)) matched = 1
+        }
+        matched { sub(/\r$/, ""); if ($0 !~ /^[[:space:]]*(#|$)/) print }
+    ' "$SSH_CONFIG")
+    if [[ -n "$existing" && "$existing" != "$HOST_ENTRY" ]]; then
+        echo "ERROR: SSH alias $KEY_NAME already exists. Choose another key name." >&2
+        exit 1
+    fi
+    [[ -z "$existing" ]] || ALIAS_REGISTERED=yes
+}
+
+ALIAS_REGISTERED=no
+check_config_alias
 umask 077
 mkdir -p -- "$KEY_DIR"
 if [[ ! -f "$PRIVATE_KEY" ]]; then
@@ -87,5 +112,11 @@ echo "Verifying key-based login..."
 ssh -i "$PRIVATE_KEY" -o IdentitiesOnly=yes -o BatchMode=no \
     -o PreferredAuthentications=publickey \
     "$USERNAME@$SERVER_IP" 'true'
-echo "Key-based login verified. Connecting..."
+echo "Key-based login verified."
+check_config_alias
+if [[ "$ALIAS_REGISTERED" == no ]]; then
+    printf '\n%s\n' "$HOST_ENTRY" >> "$SSH_CONFIG"
+fi
+printf 'Connect next time with: ssh %s\n' "$KEY_NAME"
+echo "Connecting..."
 ssh -i "$PRIVATE_KEY" -o IdentitiesOnly=yes "$USERNAME@$SERVER_IP"

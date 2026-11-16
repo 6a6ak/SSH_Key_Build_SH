@@ -28,6 +28,9 @@ key="$HOME/.ssh/office_key"
 fingerprint=$(ssh-keygen -lf "$key")
 [[ -s "$key" && -s "$key.pub" ]]
 [[ $(awk '{ print $3 }' "$key.pub") == office_key ]]
+config="$HOME/.ssh/config"
+grep -qx 'Host office_key' "$config"
+grep -q 'ssh office_key' first.log
 grep -q '^existing-key-without-newline$' "$TEST_REMOTE/.ssh/authorized_keys"
 cp "$TEST_REMOTE/.ssh/authorized_keys" before
 rm "$key.pub"
@@ -51,4 +54,9 @@ if bash "$ROOT/sshkey_builder.sh" '-oProxyCommand=bad' tester 2>/dev/null; then 
 if bash "$ROOT/sshkey_builder.sh" example.com '../bad' 2>/dev/null; then exit 1; fi
 [[ ! -s "$TEST_LOG" ]]
 printf 'example.com\ntester\noffice_key\n' | bash "$ROOT/sshkey_builder.sh" > interactive.log
+[[ $(grep -c '^Host office_key$' "$config") -eq 1 ]]
+printf '\nHost other_key\n    HostName other.example.com\n' >> "$config"
+cp "$config" config.before
+if bash "$ROOT/sshkey_builder.sh" example.com tester other_key 2>/dev/null; then exit 1; fi
+cmp config.before "$config"
 echo "All local regression checks passed."

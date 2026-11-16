@@ -31,7 +31,15 @@ if [[ ! -f "$PRIVATE_KEY" ]]; then
         echo "ERROR: Public key exists without its private key: $PUBLIC_KEY" >&2
         exit 1
     fi
-    ssh-keygen -t rsa -b 4096 -f "$PRIVATE_KEY" -N ""
+    protect_key=n
+    if [[ -t 0 ]]; then
+        read -rp "Protect the new private key with a passphrase? [y/N] " protect_key
+    fi
+    case "$protect_key" in
+        y|Y|yes|YES|Yes) ssh-keygen -t rsa -b 4096 -f "$PRIVATE_KEY" ;;
+        ""|n|N|no|NO|No) ssh-keygen -t rsa -b 4096 -f "$PRIVATE_KEY" -N "" ;;
+        *) echo "ERROR: Enter yes or no." >&2; exit 1 ;;
+    esac
 else
     echo "Using existing private key: $PRIVATE_KEY"
 fi
@@ -65,7 +73,8 @@ ssh -i "$PRIVATE_KEY" -o IdentitiesOnly=yes "$USERNAME@$SERVER_IP" '
 ' < "$PUBLIC_KEY"
 
 echo "Verifying key-based login..."
-ssh -i "$PRIVATE_KEY" -o IdentitiesOnly=yes -o BatchMode=yes \
+ssh -i "$PRIVATE_KEY" -o IdentitiesOnly=yes -o BatchMode=no \
+    -o PreferredAuthentications=publickey \
     "$USERNAME@$SERVER_IP" 'true'
 echo "Key-based login verified. Connecting..."
 ssh -i "$PRIVATE_KEY" -o IdentitiesOnly=yes "$USERNAME@$SERVER_IP"

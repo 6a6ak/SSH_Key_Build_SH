@@ -103,9 +103,14 @@ adjust the executable path, or open Git Bash directly in the project folder.
 Existing private keys are reused. Missing or stale public keys are regenerated
 from the private key.
 
-New keys have an empty passphrase. Protect your private key. Existing encrypted
-keys prompt during public-key derivation and require an SSH agent for batch-mode
-verification.
+When creating a key in a terminal, choose whether to set a passphrase. Answer
+yes and enter and confirm a nonempty passphrase at the OpenSSH prompts. Press
+Enter at the yes/no prompt to create a key without a passphrase. Noninteractive
+runs also create new keys without a passphrase.
+
+OpenSSH may prompt to unlock an encrypted key when deriving the public key,
+verifying login, or connecting. Login verification uses public-key
+authentication only.
 
 The script applies file mode 600 to the private key using chmod.
 

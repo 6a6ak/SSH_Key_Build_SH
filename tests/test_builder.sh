@@ -12,7 +12,7 @@ cat > "$TEMP_ROOT/bin/ssh" <<'MOCK'
 #!/usr/bin/env bash
 set -euo pipefail
 printf '%s\n' "$*" >> "$TEST_LOG"
-if [[ "$*" == *BatchMode=yes* ]]; then
+if [[ "$*" == *PreferredAuthentications=publickey* ]]; then
     exit "${TEST_VERIFY_EXIT:-0}"
 fi
 last="${!#}"
